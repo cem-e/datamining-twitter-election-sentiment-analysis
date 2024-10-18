@@ -5,6 +5,7 @@ from sklearn.impute import KNNImputer
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from scipy.stats import pearsonr
+import scipy.stats as stats
 from sklearn.metrics import r2_score
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.metrics import mean_squared_error
@@ -13,6 +14,40 @@ from sklearn.metrics import mean_absolute_error
 # Load the data
 df = pd.read_json('Assignment1/Dataminers 2024.json')
 df['Your height (in International inches)'] = pd.to_numeric(df['Your height (in International inches)'], errors='coerce')
+
+# Check the data types, missing values & basic statistics
+df.info()
+
+# drop rows with NaN values in the height and shoe size columns
+df_BoxPlotHeight = df.dropna(subset=['Your height (in International inches)'])
+df_BoxPlotShoeSize = df.dropna(subset=['Your mean shoe size (In the European Continental system)'])
+
+# Box Plot for outlier detection for our numeric columns.
+# Plot 1: Height
+plt.subplot(1, 2, 1)
+plt.boxplot(
+    df_BoxPlotHeight['Your height (in International inches)'], vert=True, patch_artist=True,
+    boxprops={
+        "facecolor": "#2580B7"
+    }
+)
+plt.title("Box Plot - Height")
+plt.ylabel("Height (in International Inches)")
+plt.ylim(0, 200)
+
+# Plot 2: Shoe Size
+plt.subplot(1, 2, 2)
+plt.boxplot(
+    df_BoxPlotShoeSize['Your mean shoe size (In the European Continental system)'], vert=True, patch_artist=True,
+    boxprops={
+        "facecolor": "#2580B7"
+    }
+)
+plt.title("Box Plot - Shoe Size")
+plt.ylabel("Shoe size (European Continental System)")
+plt.ylim(0, 50)
+plt.tight_layout()
+plt.show()
 
 # Function to convert height to cm
 def convert_to_cm(height):
@@ -63,46 +98,71 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 
 model = LinearRegression()
 model.fit(X_train, y_train)
-y_pred = model.predict(X_test)
+y_predL = model.predict(X_test)
 
 print(f"Model Coefficient (Slope): {model.coef_[0]}")
 print(f"Model Intercept: {model.intercept_}")
 
 # Calculate error metrics for linear model
-linear_r2 = r2_score(y_test, y_pred)
-linear_mae = mean_absolute_error(y_test, y_pred)
-linear_mse = mean_squared_error(y_test, y_pred)
+linear_r2 = r2_score(y_test, y_predL)
+linear_mae = mean_absolute_error(y_test, y_predL)
+linear_mse = mean_squared_error(y_test, y_predL)
 print(f"R-squared for linear model: {linear_r2}")
 print(f"MAE for linear model: {linear_mae}")
 print(f"MSE for linear model: {linear_mse}")
-
-# Scatterplotting the linear regression model
-plt.scatter(X_test, y_test, color='blue', label='Actual')
-plt.plot(X_test, y_pred, color='red', linewidth=3, label='Predicted')
-plt.xlabel('Shoe size')
-plt.ylabel('Height (cm)')
-plt.legend()
-plt.show()
 
 ### Training a polynomial regression model
 poly = PolynomialFeatures(degree=2)
 X_train_poly = poly.fit_transform(X_train)
 X_test_poly = poly.fit_transform(X_test)
 model.fit(X_train_poly, y_train)
-y_pred = model.predict(X_test_poly)
+y_predP = model.predict(X_test_poly)
+
+# Getting feature names (useful to know which term the coefficients correspond to)
+feature_names = poly.get_feature_names_out()
 
 # Calculate error metrics for polynomial model
-poly_r2 = r2_score(y_test, y_pred)
-poly_mae = mean_absolute_error(y_test, y_pred)
-poly_mse = mean_squared_error(y_test, y_pred)
+poly_r2 = r2_score(y_test, y_predP)
+poly_mae = mean_absolute_error(y_test, y_predP)
+poly_mse = mean_squared_error(y_test, y_predP)
 print(f"R-squared for polynomial model: {poly_r2}")
 print(f"MAE for polynomial model: {poly_mae}")
 print(f"MSE for polynomial model: {poly_mse}")
 
-# Scatterplotting the polynomial model
-plt.scatter(X_test, y_test, color='blue', label='Actual')
-plt.scatter(X_test, y_pred, color='red', label='Predicted')
+# Plotting the pearson correlation
+plt.subplot(2, 2, 1)
+plt.scatter(X, y, color='grey', label='Cleaned data')
 plt.xlabel('Shoe size')
 plt.ylabel('Height (cm)')
+plt.title("Pearson correlation (r2 = 0.8889)")
 plt.legend()
+
+# Plotting both the linear and polynomial models on cleaned data
+plt.subplot(2, 2, 2)
+plt.scatter(X, y, color='grey', label='Cleaned data')
+plt.plot(X_test, y_predL, color='red', label='Linear model')
+plt.plot(X_test, y_predP, color='blue', label='Polynomial model')
+plt.xlabel('Shoe size')
+plt.ylabel('Height (cm)')
+plt.title("Linear and Polynomial Regression")
+plt.legend()
+
+# Plotting the linear regression model on test data
+plt.subplot(2, 2, 3)
+plt.scatter(X_test, y_test, color='green', label='Test data')
+plt.plot(X_test, y_predL, color='blue', linewidth=3, label='Linear model')
+plt.xlabel('Shoe size')
+plt.ylabel('Height (cm)')
+plt.title("Linear Regression (r2 = 0.7875)")
+plt.legend()
+
+# Plotting the polynomial model on test data
+plt.subplot(2, 2, 4)
+plt.scatter(X_test, y_test, color='green', label='Test data')
+plt.plot(X_test, y_predP, color='red', label='Polynomial model')
+plt.xlabel('Shoe size')
+plt.ylabel('Height (cm)')
+plt.title("Polynomial Regression (r2 = 0.7984)")
+plt.legend()
+plt.tight_layout()
 plt.show()
