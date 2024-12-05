@@ -18,8 +18,6 @@ print("Total missing values:\n", df.isna().sum().sum(), "\n\n")
 print("Missing values in the different features:\n", df.isna().sum())
 
 
-
-
 # DATA EXPLORATION & VISUALIZATION
 
 print(df.head())
@@ -38,8 +36,12 @@ plt.xlabel('Job Satisfaction')
 plt.ylabel('Frequency')
 plt.show()
 
+df['Dietary Habits'].value_counts().plot(kind='bar', title='Dietary Habits')
+plt.xlabel('Response')
+plt.ylabel('Count')
+plt.show()
 
-
+sns.heatmap(df.corr(numeric_only=True))
 
 
 
